@@ -54,7 +54,7 @@ A single-page calculator that helps MTG players evaluate their deck's land distr
 |-----------|-----------|---------|
 | P(0 or 1 land) | > 25% | 地牌過少，起手卡頓風險高 |
 | P(5+ lands) | > 20% | 地牌過多，資源浪費風險高 |
-| P(castable for entered cost) by round 3 | < 50% | 色源不足，難以如期施放（需 CMC 張地且足夠色源）|
+| P(castable for entered cost) by turn 3 (`r=2` on play, `r=3` on draw) | < 50% | 色源不足，難以如期施放（需 CMC 張地且足夠色源）|
 
 ---
 
@@ -137,7 +137,7 @@ All three composables are instantiated in `App.vue`. Reactive refs are passed as
 ```js
 // App.vue (wiring only)
 const land = useLandProbability()
-const color = useColorProbability(land.deckSize, land.landCount)
+const color = useColorProbability(land.deckSize, land.landMatrix)
 const advisor = useAdvisor(land, color)
 
 // useLandProbability.js  — owns deck config state
@@ -150,8 +150,9 @@ const advisor = useAdvisor(land, color)
                               // roundIdx 0–4 → hands 7,8,9,10,11
 }
 
-// useColorProbability.js — receives deckSize, landCount as Ref<number> args
+// useColorProbability.js — receives deckSize and landMatrix as args
 {
+  playFirst: ref(true),       // true = play first; false = draw first
   colorCounts: ref({ B:0, W:0, U:0, G:0, R:0 }),
   manaCost: ref(''),          // raw string, e.g. "1GG"
   parsedCost: computed,       // { cmc: 7, pips: { G:2 } } — CMC = generic + Σpips
