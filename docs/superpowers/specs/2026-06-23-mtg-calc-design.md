@@ -30,7 +30,8 @@ A single-page calculator that helps MTG players evaluate their deck's land distr
 - User inputs per-colour land counts for **B, W, U, G, R** using `<input type="number">`.
 - For each colour with count > 0, shows a full hypergeometric distribution (same shape as §2.1) — one chart + table per colour.
 - User may optionally enter a **mana cost** string (e.g. `1GG`, `BB`, `UB`) to enable castability calculation.
-- **Castability:** per round, P(total lands drawn ≥ CMC) × Π_color P(color_c drawn ≥ pip_c). Both conditions must hold jointly. Treating total-land and per-color requirements as independent is the same approximation used for multi-color independence — acceptable for typical splits, stated explicitly.
+- **Play first / Draw first toggle** (default: play first): affects how many land drops are available per round.
+- **Castability:** per round — first apply the **turn-drop gate** (see §4.3), then P(total lands drawn ≥ CMC) × Π_color P(color_c drawn ≥ pip_c). Both conditions must hold jointly. Treating total-land and per-color requirements as independent is the same approximation used for multi-color independence — acceptable for typical splits, stated explicitly.
 - Castability display is hidden when mana cost field is empty or unparseable.
 
 ### 2.3 Advisor
@@ -172,8 +173,16 @@ Parse mana cost string into `{ cmc, pips }`:
 - `CMC = generic + Σpips`.
 - Examples: `"2GG"` → `{ cmc:4, pips:{G:2} }` | `"UB"` → `{ cmc:2, pips:{U:1,B:1} }` | `"5GG"` → `{ cmc:7, pips:{G:2} }` | `"XZ"` → invalid.
 
-**Castability formula per round (hand size n):**
-$$P_{\text{cast}}(n) \approx P(\text{lands} \geq \text{CMC} \mid n) \times \prod_c P(\text{color}_c \geq \text{pip}_c \mid n)$$
+**Castability formula per round index `r` (0-based, hand size `n = r+7`):**
+
+**Step 1 — Turn-drop gate:**
+$$\text{maxMana}(r) = \begin{cases} r+1 & \text{play first} \\ r & \text{draw first} \end{cases}$$
+$$\text{if } \text{CMC} > \text{maxMana}(r) \Rightarrow P_{\text{cast}}(r) = 0$$
+
+Rationale: you play at most 1 land per turn. On the play, turn 1 is available at r=0; on the draw, your first land drop is at r=1 (after drawing into 8 cards).
+
+**Step 2 — Probability (only when CMC ≤ maxMana):**
+$$P_{\text{cast}}(r) \approx P(\text{lands} \geq \text{CMC} \mid n) \times \prod_c P(\text{color}_c \geq \text{pip}_c \mid n)$$
 - $P(\text{lands} \geq \text{CMC} \mid n)$ — from `landMatrix` (cumulative sum over k ≥ CMC).
 - $P(\text{color}_c \geq \text{pip}_c \mid n)$ — from `colorMatrix[c]` (cumulative sum over k ≥ pip_c).
 - All terms treated as independent (approximation).
