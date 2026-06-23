@@ -13,7 +13,7 @@ function parseMana(raw) {
   if (generic === 0 && pipStr.length === 0) return null
   const pips = {}
   for (const ch of pipStr) pips[ch] = (pips[ch] ?? 0) + 1
-  return { cmc: generic + pipStr.length, pips }
+  return { generic, cmc: generic + pipStr.length, pips }
 }
 
 function cumulativeGeq(row, minK) {
@@ -45,12 +45,12 @@ export function useColorProbability(deckSize, landMatrix) {
   const castability = computed(() => {
     const cost = parsedCost.value
     if (!cost) return null
-    const { cmc, pips } = cost
+    const { generic, cmc, pips } = cost
     return landMatrix.value.map((landRow, i) => {
       const maxMana = playFirst.value ? i + 1 : i
       if (cmc > maxMana) return 0
 
-      const pLands = cumulativeGeq(landRow, cmc)
+      const pLands = generic === 0 ? 1 : cumulativeGeq(landRow, cmc)
       const pColors = Object.entries(pips).reduce((acc, [color, req]) => {
         const cRow = colorMatrix.value[color]?.[i]
         if (!cRow) return 0

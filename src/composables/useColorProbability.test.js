@@ -10,22 +10,22 @@ function make(deckSizeVal = 40, landCountVal = 17) {
 }
 
 describe('mana cost parsing', () => {
-  it('"2GG" → { cmc: 4, pips: { G: 2 } }', () => {
+  it('"2GG" → { generic: 2, cmc: 4, pips: { G: 2 } }', () => {
     const { manaCost, parsedCost } = make()
     manaCost.value = '2GG'
-    expect(parsedCost.value).toEqual({ cmc: 4, pips: { G: 2 } })
+    expect(parsedCost.value).toEqual({ generic: 2, cmc: 4, pips: { G: 2 } })
   })
 
-  it('"UB" → { cmc: 2, pips: { U: 1, B: 1 } }', () => {
+  it('"UB" → { generic: 0, cmc: 2, pips: { U: 1, B: 1 } }', () => {
     const { manaCost, parsedCost } = make()
     manaCost.value = 'UB'
-    expect(parsedCost.value).toEqual({ cmc: 2, pips: { U: 1, B: 1 } })
+    expect(parsedCost.value).toEqual({ generic: 0, cmc: 2, pips: { U: 1, B: 1 } })
   })
 
-  it('"5GG" → { cmc: 7, pips: { G: 2 } }', () => {
+  it('"5GG" → { generic: 5, cmc: 7, pips: { G: 2 } }', () => {
     const { manaCost, parsedCost } = make()
     manaCost.value = '5GG'
-    expect(parsedCost.value).toEqual({ cmc: 7, pips: { G: 2 } })
+    expect(parsedCost.value).toEqual({ generic: 5, cmc: 7, pips: { G: 2 } })
   })
 
   it('empty string → null', () => {
@@ -97,5 +97,13 @@ describe('castability', () => {
     expect(castability.value[1]).toBe(0)
     expect(castability.value[2]).toBe(0)
     expect(castability.value[3]).toBeGreaterThan(0)
+  })
+
+  it('generic-free costs do not double-count total land probability', () => {
+    const { colorCounts, manaCost, castability, colorMatrix } = make(40, 17)
+    colorCounts.value = { B: 7, W: 0, U: 0, G: 0, R: 0 }
+    manaCost.value = 'BB'
+    const pBlackAtLeastTwo = colorMatrix.value.B[1].slice(2).reduce((a, b) => a + b, 0)
+    expect(castability.value[1]).toBeCloseTo(pBlackAtLeastTwo, 10)
   })
 })

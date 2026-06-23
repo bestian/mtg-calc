@@ -168,11 +168,11 @@ const advisor = useAdvisor(land, color)
 
 ### 4.3 Mana Cost Parsing
 
-Parse mana cost string into `{ cmc, pips }`:
+Parse mana cost string into `{ generic, cmc, pips }`:
 - Extract leading integer (generic mana) → `generic`. Default 0 if absent.
 - Count each remaining colour character → `pips: Record<Color, number>`.
 - `CMC = generic + Σpips`.
-- Examples: `"2GG"` → `{ cmc:4, pips:{G:2} }` | `"UB"` → `{ cmc:2, pips:{U:1,B:1} }` | `"5GG"` → `{ cmc:7, pips:{G:2} }` | `"XZ"` → invalid.
+- Examples: `"2GG"` → `{ generic:2, cmc:4, pips:{G:2} }` | `"UB"` → `{ generic:0, cmc:2, pips:{U:1,B:1} }` | `"5GG"` → `{ generic:5, cmc:7, pips:{G:2} }` | `"XZ"` → invalid.
 
 **Castability formula per round index `r` (0-based, hand size `n = r+7`):**
 
@@ -183,10 +183,11 @@ $$\text{if } \text{CMC} > \text{maxMana}(r) \Rightarrow P_{\text{cast}}(r) = 0$$
 Rationale: you play at most 1 land per turn. On the play, turn 1 is available at r=0; on the draw, your first land drop is at r=1 (after drawing into 8 cards).
 
 **Step 2 — Probability (only when CMC ≤ maxMana):**
-$$P_{\text{cast}}(r) \approx P(\text{lands} \geq \text{CMC} \mid n) \times \prod_c P(\text{color}_c \geq \text{pip}_c \mid n)$$
-- $P(\text{lands} \geq \text{CMC} \mid n)$ — from `landMatrix` (cumulative sum over k ≥ CMC).
+$$P_{\text{cast}}(r) \approx P_{\text{lands}}(r) \times \prod_c P(\text{color}_c \geq \text{pip}_c \mid n)$$
+- If `generic === 0`, set $P_{\text{lands}}(r)=1$ because the required coloured pips already imply enough total lands for the CMC.
+- If `generic > 0`, set $P_{\text{lands}}(r)=P(\text{lands} \geq \text{CMC} \mid n)$ from `landMatrix` (cumulative sum over k ≥ CMC). This remains a conservative independence approximation for generic-heavy costs.
 - $P(\text{color}_c \geq \text{pip}_c \mid n)$ — from `colorMatrix[c]` (cumulative sum over k ≥ pip_c).
-- All terms treated as independent (approximation).
+- All multiplied terms treated as independent (approximation).
 
 ---
 
