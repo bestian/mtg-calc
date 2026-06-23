@@ -30,7 +30,7 @@ A single-page calculator that helps MTG players evaluate their deck's land distr
 - User inputs per-colour land counts for **B, W, U, G, R** using `<input type="number">`.
 - For each colour with count > 0, shows a full hypergeometric distribution (same shape as §2.1) — one chart + table per colour.
 - User may optionally enter a **mana cost** string (e.g. `1GG`, `BB`, `UB`) to enable castability calculation.
-- **Castability row:** per round, P(having ≥ required pips of each colour simultaneously). Colours are treated as independent draws (valid approximation for typical two-colour splits).
+- **Castability:** per round, P(total lands drawn ≥ CMC) × Π_color P(color_c drawn ≥ pip_c). Both conditions must hold jointly. Treating total-land and per-color requirements as independent is the same approximation used for multi-color independence — acceptable for typical splits, stated explicitly.
 - Castability display is hidden when mana cost field is empty or unparseable.
 
 ### 2.3 Advisor
@@ -53,7 +53,7 @@ A single-page calculator that helps MTG players evaluate their deck's land distr
 |-----------|-----------|---------|
 | P(0 or 1 land) | > 25% | 地牌過少，起手卡頓風險高 |
 | P(5+ lands) | > 20% | 地牌過多，資源浪費風險高 |
-| P(castable for entered cost) by round 3 | < 50% | 色源不足，難以如期施放 |
+| P(castable for entered cost) by round 3 | < 50% | 色源不足，難以如期施放（需 CMC 張地且足夠色源）|
 
 ---
 
@@ -153,7 +153,7 @@ const advisor = useAdvisor(land, color)
 {
   colorCounts: ref({ B:0, W:0, U:0, G:0, R:0 }),
   manaCost: ref(''),          // raw string, e.g. "1GG"
-  parsedCost: computed,       // { G:2 } — generic mana stripped
+  parsedCost: computed,       // { cmc: 7, pips: { G:2 } } — CMC = generic + Σpips
   colorMatrix: computed,      // Record<Color, number[5][12]>
   castability: computed,      // number[5] — P(castable) per round
 }
@@ -166,8 +166,17 @@ const advisor = useAdvisor(land, color)
 
 ### 4.3 Mana Cost Parsing
 
-Strip leading digit sequences (generic mana). Count remaining colour characters.  
-`"2GG"` → `{ G: 2 }` | `"UB"` → `{ U: 1, B: 1 }` | `"XZ"` → invalid (hidden).
+Parse mana cost string into `{ cmc, pips }`:
+- Extract leading integer (generic mana) → `generic`. Default 0 if absent.
+- Count each remaining colour character → `pips: Record<Color, number>`.
+- `CMC = generic + Σpips`.
+- Examples: `"2GG"` → `{ cmc:4, pips:{G:2} }` | `"UB"` → `{ cmc:2, pips:{U:1,B:1} }` | `"5GG"` → `{ cmc:7, pips:{G:2} }` | `"XZ"` → invalid.
+
+**Castability formula per round (hand size n):**
+$$P_{\text{cast}}(n) \approx P(\text{lands} \geq \text{CMC} \mid n) \times \prod_c P(\text{color}_c \geq \text{pip}_c \mid n)$$
+- $P(\text{lands} \geq \text{CMC} \mid n)$ — from `landMatrix` (cumulative sum over k ≥ CMC).
+- $P(\text{color}_c \geq \text{pip}_c \mid n)$ — from `colorMatrix[c]` (cumulative sum over k ≥ pip_c).
+- All terms treated as independent (approximation).
 
 ---
 
