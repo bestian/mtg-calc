@@ -129,10 +129,17 @@ $$P(X = k) = \frac{\binom{K}{k}\binom{N-K}{n-k}}{\binom{N}{n}}$$
 
 Implementation uses **log-space computation** (`logGamma` / Stirling) to avoid floating-point overflow for large custom deck sizes.
 
-### 4.2 Composable Interfaces
+### 4.2 Composable Interfaces & Dependency Wiring
+
+All three composables are instantiated in `App.vue`. Reactive refs are passed as arguments so each composable remains a pure function with no hidden imports.
 
 ```js
-// useLandProbability.js
+// App.vue (wiring only)
+const land = useLandProbability()
+const color = useColorProbability(land.deckSize, land.landCount)
+const advisor = useAdvisor(land, color)
+
+// useLandProbability.js  — owns deck config state
 {
   deckSize: ref(40),          // number
   landCount: ref(17),         // number
@@ -142,7 +149,7 @@ Implementation uses **log-space computation** (`logGamma` / Stirling) to avoid f
                               // roundIdx 0–4 → hands 7,8,9,10,11
 }
 
-// useColorProbability.js
+// useColorProbability.js — receives deckSize, landCount as Ref<number> args
 {
   colorCounts: ref({ B:0, W:0, U:0, G:0, R:0 }),
   manaCost: ref(''),          // raw string, e.g. "1GG"
@@ -151,7 +158,7 @@ Implementation uses **log-space computation** (`logGamma` / Stirling) to avoid f
   castability: computed,      // number[5] — P(castable) per round
 }
 
-// useAdvisor.js
+// useAdvisor.js — receives land and color composable return values as args
 {
   advisorMessages: computed,  // Array<{ type: 'warn'|'ok'|'info', text: string }>
 }
