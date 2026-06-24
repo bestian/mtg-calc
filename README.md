@@ -1,8 +1,10 @@
 # 🃏 MTG 機率計算機
 
-計算並視覺化《魔法風雲會》(Magic: The Gathering) 起手與前幾回合的牌組機率分佈 —— 包含地牌數量、各色色源、以及指定法術的施放機率 (castability),並提供即時牌組建議。
+計算並視覺化《魔法風雲會》(Magic: The Gathering) 紙牌遊戲起手與前幾回合的牌組機率分佈 —— 包含地牌數量、各色色源、以及指定法術的施放機率 (castability),並提供即時牌組建議。
 
 純前端單頁應用 (Vue 3 SPA),所有機率以超幾何分佈 (hypergeometric distribution) 在 log-space 計算,無後端、無外部 API。
+
+開發中。
 
 ## 功能
 
