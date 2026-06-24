@@ -23,9 +23,10 @@ function onLandInput(e) {
 <template>
   <section class="bg-white rounded-xl shadow p-4 space-y-4">
     <h2 class="font-bold text-lg">牌組設定</h2>
+  </section>
+  <section class="flex flex-col md:flex-row gap-4 bg-white rounded-xl shadow p-4 space-y-4">
 
-    <div class="space-y-2">
-      <label class="block text-sm font-medium text-gray-700">先後手</label>
+    <div class="flex space-y-2">
       <div class="flex gap-2">
         <button
           @click="emit('update:playFirst', true)"
@@ -57,6 +58,7 @@ function onLandInput(e) {
           @click="emit('update:deckSize', preset)"
           :class="[
             'px-4 py-2 rounded border font-medium text-sm transition',
+            deckSize !== 40 && deckSize !== 60 ? 'opacity-50' : '',
             deckSize === preset
               ? 'bg-indigo-600 text-white border-indigo-600'
               : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-400',
@@ -64,9 +66,13 @@ function onLandInput(e) {
         >{{ preset }} 張</button>
         <input
           type="number"
-          min="7"
+          min="40"
           :placeholder="PRESETS.includes(deckSize) ? '自訂' : deckSize"
           @input="onDeckInput"
+          :class="
+          [
+            deckSize === 40 || deckSize === 60 ? 'opacity-50' : '',
+          ]"
           class="w-24 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
         />
       </div>
